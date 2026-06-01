@@ -63,8 +63,29 @@ import Swinject
         switch components?.host {
         case "device-select-resp":
             FreeAPSApp.resolver.resolve(NotificationCenter.self)!.post(name: .openFromGarminConnect, object: url)
+        case "carbs":
+            handleCarbCamURL(components: components)
         default: break
         }
+    }
+
+    private func handleCarbCamURL(components: URLComponents?) {
+        guard let items = components?.queryItems,
+              let valueStr = items.first(where: { $0.name == "value" })?.value,
+              let value = Int(valueStr), value >= 1, value <= 80
+        else { return }
+
+        let notes = items.first(where: { $0.name == "notes" })?.value ?? ""
+        let source = items.first(where: { $0.name == "source" })?.value ?? "external"
+
+        ExternalCarbsPrefill.carbs = Decimal(value)
+        ExternalCarbsPrefill.notes = notes
+        ExternalCarbsPrefill.source = source
+
+        debug(.default, "CarbCam URL: \(value)g carbs from \(source)")
+
+        FreeAPSApp.resolver.resolve(NotificationCenter.self)!
+            .post(name: .openAddCarbsFromCarbCam, object: nil)
     }
 
     private func isNewVersion() {

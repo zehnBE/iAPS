@@ -348,6 +348,21 @@ extension Home {
                     }
                 }
                 .store(in: &lifetime)
+
+            // CarbCam: open AddCarbs sheet when external URL was received
+            NotificationCenter.default.publisher(for: .openAddCarbsFromCarbCam)
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    self?.addCarbs()
+                }
+                .store(in: &lifetime)
+
+            // CarbCam cold-start: URL arrived before this listener was ready
+            if ExternalCarbsPrefill.carbs != nil {
+                DispatchQueue.main.async { [weak self] in
+                    self?.addCarbs()
+                }
+            }
         }
 
         private func updateSensorDays() {

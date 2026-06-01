@@ -41,6 +41,13 @@ extension AddCarbs {
             skipBolus = settingsManager.settings.skipBolusScreenAfterCarbs
             useFPUconversion = settingsManager.settings.useFPUconversion
             ai = settingsManager.settings.ai
+
+            // CarbCam: consume prefill that was set by FreeAPSApp.handleCarbCamURL
+            if let prefill = ExternalCarbsPrefill.consume() {
+                carbs = prefill.carbs
+                if !prefill.notes.isEmpty { note = prefill.notes }
+                debug(.default, "CarbCam prefill consumed: \(prefill.carbs)g, source=\(prefill.source)")
+            }
         }
 
         func add(_ continue_: Bool, fetch: Bool) {

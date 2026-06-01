@@ -41,6 +41,7 @@
 			<array>
 				<string>$(APP_URL_SCHEME)</string>
 				<string>freeaps-x</string>
+				<string>carbcam-iaps</string>
 			</array>
 		</dict>
 	</array>
