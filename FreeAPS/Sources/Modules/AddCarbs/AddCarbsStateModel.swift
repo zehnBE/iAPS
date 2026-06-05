@@ -52,8 +52,11 @@ extension AddCarbs {
             // step, so manual re-open of AddCarbs does not re-apply the prefill.
             if let prefill = ExternalCarbsPrefill.consume() {
                 carbs = prefill.carbs
+                fat = prefill.fat
+                protein = prefill.protein
+                fiber = prefill.fiber
                 if !prefill.notes.isEmpty { note = prefill.notes }
-                debug(.default, "CarbCam prefill consumed: \(prefill.carbs)g, source=\(prefill.source)")
+                debug(.default, "CarbCam prefill consumed: \(prefill.carbs)g C / \(prefill.fat)g F / \(prefill.protein)g P / \(prefill.fiber)g Fib, source=\(prefill.source)")
             }
         }
 

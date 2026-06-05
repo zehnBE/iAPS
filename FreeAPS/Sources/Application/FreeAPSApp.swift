@@ -88,7 +88,20 @@ import Swinject
             .prefix(50)
             .description
 
+        // Optional fat/protein/fiber - each clamped to 0..80 g, missing/invalid -> 0
+        func parseOptional(_ name: String) -> Decimal {
+            guard let s = items.first(where: { $0.name == name })?.value,
+                  let v = Int(s), v >= 0, v <= 80 else { return 0 }
+            return Decimal(v)
+        }
+        let fat = parseOptional("fat")
+        let protein = parseOptional("protein")
+        let fiber = parseOptional("fiber")
+
         ExternalCarbsPrefill.carbs = Decimal(value)
+        ExternalCarbsPrefill.fat = fat
+        ExternalCarbsPrefill.protein = protein
+        ExternalCarbsPrefill.fiber = fiber
         ExternalCarbsPrefill.notes = notes
         ExternalCarbsPrefill.source = source
 
@@ -121,14 +134,20 @@ import Swinject
 /// AddCarbsStateModel.subscribe().
 enum ExternalCarbsPrefill {
     static var carbs: Decimal?
+    static var fat: Decimal?
+    static var protein: Decimal?
+    static var fiber: Decimal?
     static var notes: String?
     static var source: String?
 
     /// Returns the pending prefill (if any) and clears the holder.
-    static func consume() -> (carbs: Decimal, notes: String, source: String)? {
+    static func consume() -> (carbs: Decimal, fat: Decimal, protein: Decimal, fiber: Decimal, notes: String, source: String)? {
         guard let c = carbs else { return nil }
-        let result = (c, notes ?? "", source ?? "")
+        let result = (c, fat ?? 0, protein ?? 0, fiber ?? 0, notes ?? "", source ?? "")
         carbs = nil
+        fat = nil
+        protein = nil
+        fiber = nil
         notes = nil
         source = nil
         return result
