@@ -348,6 +348,24 @@ extension Home {
                     }
                 }
                 .store(in: &lifetime)
+
+            // CarbCam: open AddCarbs sheet when external URL was received.
+            // Uses Foundation. prefix because iAPS has its own NotificationCenter
+            // protocol that would otherwise shadow Foundation.NotificationCenter.
+            Foundation.NotificationCenter.default
+                .publisher(for: Notification.Name.openAddCarbsFromCarbCam)
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    self?.addCarbs()
+                }
+                .store(in: &lifetime)
+
+            // Cold-start safe: URL arrived before this listener was wired up
+            if ExternalCarbsPrefill.carbs != nil {
+                DispatchQueue.main.async { [weak self] in
+                    self?.addCarbs()
+                }
+            }
         }
 
         private func updateSensorDays() {

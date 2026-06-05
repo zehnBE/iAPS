@@ -63,8 +63,37 @@ import Swinject
         switch components?.host {
         case "device-select-resp":
             FreeAPSApp.resolver.resolve(NotificationCenter.self)!.post(name: .openFromGarminConnect, object: url)
+        case "carbs":
+            handleCarbCamURL(components: components)
         default: break
         }
+    }
+
+    /// Handles `carbcam-iaps://carbs?value=N&notes=...&source=...` URLs
+    /// from 10BE CarbCam. Stores the prefill in ExternalCarbsPrefill and
+    /// posts the openAddCarbsFromCarbCam notification. HomeStateModel
+    /// listens and opens the AddCarbs sheet which then consumes the prefill.
+    /// User always confirms via Save - no silent CoreData writes.
+    private func handleCarbCamURL(components: URLComponents?) {
+        guard let items = components?.queryItems else { return }
+        guard let valueStr = items.first(where: { $0.name == "value" })?.value,
+              let value = Int(valueStr), value >= 1, value <= 80
+        else { return }
+
+        let notes = (items.first(where: { $0.name == "notes" })?.value ?? "")
+            .prefix(200)
+            .description
+
+        let source = (items.first(where: { $0.name == "source" })?.value ?? "")
+            .prefix(50)
+            .description
+
+        ExternalCarbsPrefill.carbs = Decimal(value)
+        ExternalCarbsPrefill.notes = notes
+        ExternalCarbsPrefill.source = source
+
+        Foundation.NotificationCenter.default
+            .post(name: Notification.Name.openAddCarbsFromCarbCam, object: nil)
     }
 
     private func isNewVersion() {
@@ -80,4 +109,35 @@ import Swinject
             return
         }
     }
+}
+
+// MARK: - CarbCam URL prefill support
+
+/// Holds carbs/notes/source received from 10BE CarbCam via the
+/// carbcam-iaps:// URL scheme until the AddCarbs sheet is opened and
+/// consumes them.
+///
+/// Main-thread only. Set by FreeAPSApp.handleCarbCamURL, consumed by
+/// AddCarbsStateModel.subscribe().
+enum ExternalCarbsPrefill {
+    static var carbs: Decimal?
+    static var notes: String?
+    static var source: String?
+
+    /// Returns the pending prefill (if any) and clears the holder.
+    static func consume() -> (carbs: Decimal, notes: String, source: String)? {
+        guard let c = carbs else { return nil }
+        let result = (c, notes ?? "", source ?? "")
+        carbs = nil
+        notes = nil
+        source = nil
+        return result
+    }
+}
+
+extension Notification.Name {
+    /// Posted by FreeAPSApp.handleCarbCamURL once the prefill has been
+    /// stored in ExternalCarbsPrefill. HomeStateModel listens and opens
+    /// the AddCarbs sheet which then consumes the prefill.
+    static let openAddCarbsFromCarbCam = Notification.Name("openAddCarbsFromCarbCam")
 }
