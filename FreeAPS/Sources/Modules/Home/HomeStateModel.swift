@@ -350,7 +350,7 @@ extension Home {
                 .store(in: &lifetime)
 
             // CarbCam: open AddCarbs sheet when external URL was received
-            NotificationCenter.default.publisher(for: .openAddCarbsFromCarbCam)
+            Foundation.NotificationCenter.default.publisher(for: Notification.Name.openAddCarbsFromCarbCam)
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] _ in
                     self?.addCarbs()

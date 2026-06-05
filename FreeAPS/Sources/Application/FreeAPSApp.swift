@@ -85,7 +85,7 @@ import Swinject
         debug(.default, "CarbCam URL: \(value)g carbs from \(source)")
 
         FreeAPSApp.resolver.resolve(NotificationCenter.self)!
-            .post(name: .openAddCarbsFromCarbCam, object: nil)
+            .post(name: Notification.Name.openAddCarbsFromCarbCam, object: nil)
     }
 
     private func isNewVersion() {
