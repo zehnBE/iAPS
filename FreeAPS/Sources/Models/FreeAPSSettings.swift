@@ -146,6 +146,25 @@ struct FreeAPSSettings: JSON, Equatable {
     var allowOneMinuteLoop: Bool = false // allow running loops every minute
     var allowOneMinuteGlucose: Bool = false // allow sending 1-minute readings to oref, even if loops are with 5-minute intervals
     var ai: Bool = true
+    var mealViewMicronutrients: Bool = false
+    var nightTime = NightTimeConfiguration.default
+    var autoisfEffective: Bool {
+        autoisf && !isNighttime
+    }
+
+    var isNighttime: Bool {
+        guard nightTime.enabled else { return false }
+
+        let calendar = Calendar.current.dateComponents([.hour, .minute], from: .now)
+        guard let h = calendar.hour, let m = calendar.minute else { return false }
+
+        let now = h * 60 + m
+        let start = nightTime.startHour * 60 + nightTime.startMinute
+        let end = nightTime.endHour * 60 + nightTime.endMinute
+
+        return (start > end && (now >= start || now < end)) ||
+            (start <= end && now >= start && now < end)
+    }
 }
 
 extension FreeAPSSettings: Decodable {
@@ -710,8 +729,16 @@ extension FreeAPSSettings: Decodable {
             settings.ai = ai
         }
 
+        if let mealViewMicronutrients = try? container.decode(Bool.self, forKey: .mealViewMicronutrients) {
+            settings.mealViewMicronutrients = mealViewMicronutrients
+        }
+
         if let uploadLogs = try? container.decode(Bool.self, forKey: .uploadLogs) {
             settings.uploadLogs = uploadLogs
+        }
+
+        if let nightTime = try? container.decode(NightTimeConfiguration.self, forKey: .nightTime) {
+            settings.nightTime = nightTime
         }
 
         self = settings
