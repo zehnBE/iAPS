@@ -103,7 +103,7 @@ jobs:
           ref: ${{ env.TARGET_BRANCH }} 
       
       - name: Sync upstream changes
-        if: | # do not run the upstream sync action on the upstream repository
+        if: false # do not run the upstream sync action on the upstream repository
           vars.SCHEDULED_SYNC == 'true' && github.repository_owner != 'Artificial-Pancreas'
         id: sync
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
