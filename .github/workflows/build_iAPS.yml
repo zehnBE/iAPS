@@ -56,7 +56,7 @@ jobs:
     
     steps:
     - name: Checkout target repo
-      if: |
+      if: false
       uses: actions/checkout@v5
       with:
         token: ${{ secrets.GH_PAT }}
