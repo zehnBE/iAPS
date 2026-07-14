@@ -57,7 +57,6 @@ jobs:
     steps:
     - name: Checkout target repo
       if: |
-        needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION == 'true' &&
       uses: actions/checkout@v5
       with:
         token: ${{ secrets.GH_PAT }}
@@ -94,7 +93,6 @@ jobs:
           xcodebuild -version
       
       - name: Checkout Repo for syncing
-        if: |
         uses: actions/checkout@v5
         with:
           token: ${{ secrets.GH_PAT }}
@@ -113,15 +111,12 @@ jobs:
       
       # Display a sample message based on the sync output var 'has_new_commits'
       - name: New commits found
-        if: |
         run: echo "New commits were found to sync."
     
       - name: No new commits
-        if: |
         run: echo "There were no new commits."
       
       - name: Show value of 'has_new_commits'
-        if: |
         run: |
           echo ${{ steps.sync.outputs.has_new_commits }}
           echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
