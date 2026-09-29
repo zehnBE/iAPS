@@ -46,6 +46,16 @@ extension AddCarbs {
             useFPUconversion = settingsManager.settings.useFPUconversion
             ai = settingsManager.settings.ai
             mealViewMicronutrients = settingsManager.settings.mealViewMicronutrients
+
+            // CarbCam: consume pending prefill from FreeAPSApp.handleCarbCamURL.
+            if let prefill = ExternalCarbsPrefill.consume() {
+                carbs = prefill.carbs
+                fat = prefill.fat
+                protein = prefill.protein
+                fiber = prefill.fiber
+                if !prefill.notes.isEmpty { note = prefill.notes }
+                debug(.default, "CarbCam prefill consumed: \(prefill.carbs)g C / \(prefill.fat)g F / \(prefill.protein)g P / \(prefill.fiber)g Fib, source=\(prefill.source)")
+            }
         }
 
         func add(_ continue_: Bool, fetch: Bool) {
