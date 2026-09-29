@@ -146,8 +146,42 @@ private struct LaunchedAppView: View {
         switch components?.host {
         case "device-select-resp":
             FreeAPSApp.resolver.resolve(NotificationCenter.self)!.post(name: .openFromGarminConnect, object: url)
+        case "carbs":
+            handleCarbCamURL(components: components)
         default: break
         }
+    }
+
+    /// Handles `carbcam-iaps://carbs?value=N&fat=X&protein=Y&fiber=Z&notes=...&source=...`
+    /// URLs from 10BE CarbCam. Stores the prefill in ExternalCarbsPrefill and posts
+    /// openAddCarbsFromCarbCam. HomeStateModel listens and opens AddCarbs which
+    /// consumes the prefill. User always confirms via Save.
+    private func handleCarbCamURL(components: URLComponents?) {
+        guard let items = components?.queryItems else { return }
+        guard let valueStr = items.first(where: { $0.name == "value" })?.value,
+              let value = Int(valueStr), value >= 1, value <= 80
+        else { return }
+
+        let notes = (items.first(where: { $0.name == "notes" })?.value ?? "")
+            .prefix(200).description
+        let source = (items.first(where: { $0.name == "source" })?.value ?? "")
+            .prefix(50).description
+
+        func parseOptional(_ name: String) -> Decimal {
+            guard let s = items.first(where: { $0.name == name })?.value,
+                  let v = Int(s), v >= 0, v <= 80 else { return 0 }
+            return Decimal(v)
+        }
+
+        ExternalCarbsPrefill.carbs = Decimal(value)
+        ExternalCarbsPrefill.fat = parseOptional("fat")
+        ExternalCarbsPrefill.protein = parseOptional("protein")
+        ExternalCarbsPrefill.fiber = parseOptional("fiber")
+        ExternalCarbsPrefill.notes = notes
+        ExternalCarbsPrefill.source = source
+
+        Foundation.NotificationCenter.default
+            .post(name: Notification.Name.openAddCarbsFromCarbCam, object: nil)
     }
 }
 
@@ -202,4 +236,26 @@ enum ProtectedDataGate {
 
         return (try? Data(contentsOf: probeURL)) != nil
     }
+}
+
+// MARK: - CarbCam URL prefill support (fat/protein/fiber included)
+
+enum ExternalCarbsPrefill {
+    static var carbs: Decimal?
+    static var fat: Decimal?
+    static var protein: Decimal?
+    static var fiber: Decimal?
+    static var notes: String?
+    static var source: String?
+
+    static func consume() -> (carbs: Decimal, fat: Decimal, protein: Decimal, fiber: Decimal, notes: String, source: String)? {
+        guard let c = carbs else { return nil }
+        let result = (c, fat ?? 0, protein ?? 0, fiber ?? 0, notes ?? "", source ?? "")
+        carbs = nil; fat = nil; protein = nil; fiber = nil; notes = nil; source = nil
+        return result
+    }
+}
+
+extension Notification.Name {
+    static let openAddCarbsFromCarbCam = Notification.Name("openAddCarbsFromCarbCam")
 }
